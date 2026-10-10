@@ -33,17 +33,80 @@ public class BankTests
         Assert.Equal(20, _bank.GetBalance("100"));
     }
 
+    [Fact]
+    public void Withdraw_reduces_balance()
+    {
+        _bank.Deposit("100", 20);
+
+        var account = _bank.Withdraw("100", 5);
+
+        Assert.Equal(new Account("100", 15), account);
+        Assert.Equal(15, _bank.GetBalance("100"));
+    }
+
+    [Fact]
+    public void Withdraw_of_the_whole_balance_leaves_zero()
+    {
+        _bank.Deposit("100", 20);
+
+        _bank.Withdraw("100", 20);
+
+        Assert.Equal(0, _bank.GetBalance("100"));
+    }
+
+    [Fact]
+    public void Withdraw_from_unknown_account_fails_without_creating_it()
+    {
+        Assert.Throws<AccountNotFoundException>(() => _bank.Withdraw("200", 10));
+
+        Assert.Null(_bank.GetBalance("200"));
+    }
+
+    [Fact]
+    public void Withdraw_beyond_balance_fails_and_keeps_balance()
+    {
+        _bank.Deposit("100", 10);
+
+        Assert.Throws<InsufficientFundsException>(() => _bank.Withdraw("100", 11));
+
+        Assert.Equal(10, _bank.GetBalance("100"));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
-    public void Deposit_rejects_non_positive_amounts_without_changing_state(decimal amount)
+    public void Operations_reject_non_positive_amounts_without_changing_state(decimal amount)
     {
         _bank.Deposit("100", 10);
 
         Assert.Throws<InvalidAmountException>(() => _bank.Deposit("100", amount));
         Assert.Throws<InvalidAmountException>(() => _bank.Deposit("999", amount));
+        Assert.Throws<InvalidAmountException>(() => _bank.Withdraw("100", amount));
 
         Assert.Equal(10, _bank.GetBalance("100"));
         Assert.Null(_bank.GetBalance("999"));
+    }
+
+    [Fact]
+    public async Task Concurrent_withdrawals_never_overdraw()
+    {
+        _bank.Deposit("100", 100);
+
+        var withdrawals = Enumerable.Range(0, 500).Select(_ => Task.Run(() =>
+        {
+            try
+            {
+                _bank.Withdraw("100", 1);
+                return true;
+            }
+            catch (InsufficientFundsException)
+            {
+                return false;
+            }
+        }));
+        var results = await Task.WhenAll(withdrawals);
+
+        Assert.Equal(100, results.Count(succeeded => succeeded));
+        Assert.Equal(0, _bank.GetBalance("100"));
     }
 }

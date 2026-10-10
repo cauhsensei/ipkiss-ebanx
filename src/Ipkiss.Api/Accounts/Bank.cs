@@ -22,8 +22,30 @@ public sealed class Bank
         }
     }
 
+    public Account Withdraw(string originId, decimal amount)
+    {
+        EnsurePositive(amount);
+
+        lock (_lock)
+        {
+            Debit(originId, amount);
+            return Snapshot(originId);
+        }
+    }
+
     private void Credit(string accountId, decimal amount) =>
         _balances[accountId] = _balances.GetValueOrDefault(accountId) + amount;
+
+    private void Debit(string accountId, decimal amount)
+    {
+        if (!_balances.TryGetValue(accountId, out var balance))
+            throw new AccountNotFoundException(accountId);
+
+        if (balance < amount)
+            throw new InsufficientFundsException(accountId);
+
+        _balances[accountId] = balance - amount;
+    }
 
     private Account Snapshot(string accountId) => new(accountId, _balances[accountId]);
 
