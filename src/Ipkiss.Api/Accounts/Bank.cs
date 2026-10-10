@@ -33,6 +33,18 @@ public sealed class Bank
         }
     }
 
+    public (Account Origin, Account Destination) Transfer(string originId, string destinationId, decimal amount)
+    {
+        EnsurePositive(amount);
+
+        lock (_lock)
+        {
+            Debit(originId, amount);
+            Credit(destinationId, amount);
+            return (Snapshot(originId), Snapshot(destinationId));
+        }
+    }
+
     private void Credit(string accountId, decimal amount) =>
         _balances[accountId] = _balances.GetValueOrDefault(accountId) + amount;
 

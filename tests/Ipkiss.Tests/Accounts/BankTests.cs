@@ -72,6 +72,64 @@ public class BankTests
         Assert.Equal(10, _bank.GetBalance("100"));
     }
 
+    [Fact]
+    public void Transfer_moves_amount_from_origin_to_new_destination()
+    {
+        _bank.Deposit("100", 15);
+
+        var (origin, destination) = _bank.Transfer("100", "300", 15);
+
+        Assert.Equal(new Account("100", 0), origin);
+        Assert.Equal(new Account("300", 15), destination);
+        Assert.Equal(0, _bank.GetBalance("100"));
+        Assert.Equal(15, _bank.GetBalance("300"));
+    }
+
+    [Fact]
+    public void Transfer_into_existing_destination_adds_to_its_balance()
+    {
+        _bank.Deposit("100", 10);
+        _bank.Deposit("300", 5);
+
+        _bank.Transfer("100", "300", 4);
+
+        Assert.Equal(6, _bank.GetBalance("100"));
+        Assert.Equal(9, _bank.GetBalance("300"));
+    }
+
+    [Fact]
+    public void Transfer_from_unknown_origin_fails_without_touching_destination()
+    {
+        Assert.Throws<AccountNotFoundException>(() => _bank.Transfer("200", "300", 15));
+
+        Assert.Null(_bank.GetBalance("200"));
+        Assert.Null(_bank.GetBalance("300"));
+    }
+
+    [Fact]
+    public void Transfer_beyond_balance_fails_and_keeps_both_balances()
+    {
+        _bank.Deposit("100", 10);
+        _bank.Deposit("300", 1);
+
+        Assert.Throws<InsufficientFundsException>(() => _bank.Transfer("100", "300", 11));
+
+        Assert.Equal(10, _bank.GetBalance("100"));
+        Assert.Equal(1, _bank.GetBalance("300"));
+    }
+
+    [Fact]
+    public void Transfer_to_the_same_account_keeps_its_balance()
+    {
+        _bank.Deposit("100", 10);
+
+        var (origin, destination) = _bank.Transfer("100", "100", 4);
+
+        Assert.Equal(new Account("100", 10), origin);
+        Assert.Equal(new Account("100", 10), destination);
+        Assert.Equal(10, _bank.GetBalance("100"));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
@@ -82,9 +140,37 @@ public class BankTests
         Assert.Throws<InvalidAmountException>(() => _bank.Deposit("100", amount));
         Assert.Throws<InvalidAmountException>(() => _bank.Deposit("999", amount));
         Assert.Throws<InvalidAmountException>(() => _bank.Withdraw("100", amount));
+        Assert.Throws<InvalidAmountException>(() => _bank.Transfer("100", "300", amount));
 
         Assert.Equal(10, _bank.GetBalance("100"));
         Assert.Null(_bank.GetBalance("999"));
+        Assert.Null(_bank.GetBalance("300"));
+    }
+
+    [Fact]
+    public async Task Concurrent_transfers_preserve_the_total_balance()
+    {
+        _bank.Deposit("A", 1000);
+        _bank.Deposit("B", 1000);
+
+        var transfers = Enumerable.Range(0, 2000).Select(i => Task.Run(() =>
+        {
+            try
+            {
+                if (i % 2 == 0)
+                    _bank.Transfer("A", "B", 3);
+                else
+                    _bank.Transfer("B", "A", 3);
+            }
+            catch (InsufficientFundsException)
+            {
+            }
+        }));
+        await Task.WhenAll(transfers);
+
+        Assert.Equal(2000, _bank.GetBalance("A") + _bank.GetBalance("B"));
+        Assert.True(_bank.GetBalance("A") >= 0);
+        Assert.True(_bank.GetBalance("B") >= 0);
     }
 
     [Fact]
