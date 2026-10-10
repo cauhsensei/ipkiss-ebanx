@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Ipkiss.Api/Ipkiss.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Ipkiss.Tests/Ipkiss.Tests.csproj" />
+  </Folder>
+</Solution>
