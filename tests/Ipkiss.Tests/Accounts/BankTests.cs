@@ -148,6 +148,18 @@ public class BankTests
     }
 
     [Fact]
+    public void Reset_removes_all_accounts()
+    {
+        _bank.Deposit("100", 10);
+        _bank.Deposit("300", 10);
+
+        _bank.Reset();
+
+        Assert.Null(_bank.GetBalance("100"));
+        Assert.Null(_bank.GetBalance("300"));
+    }
+
+    [Fact]
     public async Task Concurrent_transfers_preserve_the_total_balance()
     {
         _bank.Deposit("A", 1000);

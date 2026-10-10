@@ -45,6 +45,12 @@ public sealed class Bank
         }
     }
 
+    public void Reset()
+    {
+        lock (_lock)
+            _balances.Clear();
+    }
+
     private void Credit(string accountId, decimal amount) =>
         _balances[accountId] = _balances.GetValueOrDefault(accountId) + amount;
 
