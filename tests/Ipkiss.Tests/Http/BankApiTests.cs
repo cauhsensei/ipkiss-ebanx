@@ -95,6 +95,21 @@ public sealed class BankApiTests : IDisposable
         await AssertText(await GetBalance("100"), HttpStatusCode.NotFound, "0");
     }
 
+    [Theory]
+    [InlineData("{bad")]
+    [InlineData("")]
+    [InlineData("""{"type":"deposit", "destination":"100", "amount":"ten"}""")]
+    public async Task Malformed_event_bodies_get_the_uniform_error_response(string body)
+    {
+        await AssertText(await PostEvent(body), HttpStatusCode.BadRequest, "0");
+    }
+
+    [Fact]
+    public async Task Balance_without_account_id_gets_the_uniform_error_response()
+    {
+        await AssertText(await _client.GetAsync("/balance"), HttpStatusCode.BadRequest, "0");
+    }
+
     [Fact]
     public async Task Reset_clears_all_accounts()
     {
