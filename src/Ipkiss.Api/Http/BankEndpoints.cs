@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Ipkiss.Api.Accounts;
 using Microsoft.AspNetCore.Mvc;
@@ -33,12 +34,12 @@ public static class BankEndpoints
         {
             return request switch
             {
-                { Type: "deposit", Destination: { } destination } =>
-                    Created(new { destination = bank.Deposit(destination, request.Amount) }),
-                { Type: "withdraw", Origin: { } origin } =>
-                    Created(new { origin = bank.Withdraw(origin, request.Amount) }),
-                { Type: "transfer", Origin: { } origin, Destination: { } destination } =>
-                    Transfer(bank, origin, destination, request.Amount),
+                { Type: "deposit" } when IsAccountId(request.Destination) =>
+                    Created(new { destination = bank.Deposit(request.Destination, request.Amount) }),
+                { Type: "withdraw" } when IsAccountId(request.Origin) =>
+                    Created(new { origin = bank.Withdraw(request.Origin, request.Amount) }),
+                { Type: "transfer" } when IsAccountId(request.Origin) && IsAccountId(request.Destination) =>
+                    Transfer(bank, request.Origin, request.Destination, request.Amount),
                 _ => BadRequest()
             };
         }
@@ -59,6 +60,8 @@ public static class BankEndpoints
         var (origin, destination) = bank.Transfer(originId, destinationId, amount);
         return Created(new { origin, destination });
     }
+
+    private static bool IsAccountId([NotNullWhen(true)] string? value) => !string.IsNullOrWhiteSpace(value);
 
     private static IResult Created(object body) => Results.Json(body, statusCode: StatusCodes.Status201Created);
 

@@ -95,6 +95,20 @@ public sealed class BankApiTests : IDisposable
         await AssertText(await GetBalance("100"), HttpStatusCode.NotFound, "0");
     }
 
+    [Theory]
+    [InlineData("""{"type":"deposit", "destination":"", "amount":10}""")]
+    [InlineData("""{"type":"deposit", "destination":"   ", "amount":10}""")]
+    [InlineData("""{"type":"withdraw", "origin":"", "amount":5}""")]
+    [InlineData("""{"type":"transfer", "origin":"100", "amount":5, "destination":""}""")]
+    public async Task Events_with_blank_account_ids_are_rejected(string body)
+    {
+        await PostEvent("""{"type":"deposit", "destination":"100", "amount":10}""");
+
+        await AssertText(await PostEvent(body), HttpStatusCode.BadRequest, "0");
+
+        await AssertText(await GetBalance("100"), HttpStatusCode.OK, "10");
+    }
+
     [Fact]
     public async Task Deposit_beyond_the_balance_limit_is_rejected()
     {
