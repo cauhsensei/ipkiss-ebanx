@@ -17,6 +17,7 @@ public sealed class Bank
 
         lock (_lock)
         {
+            EnsureCanCredit(destinationId, amount);
             Credit(destinationId, amount);
             return Snapshot(destinationId);
         }
@@ -28,6 +29,7 @@ public sealed class Bank
 
         lock (_lock)
         {
+            EnsureCanDebit(originId, amount);
             Debit(originId, amount);
             return Snapshot(originId);
         }
@@ -39,6 +41,8 @@ public sealed class Bank
 
         lock (_lock)
         {
+            EnsureCanDebit(originId, amount);
+            EnsureCanCredit(destinationId, amount);
             Debit(originId, amount);
             Credit(destinationId, amount);
             return (Snapshot(originId), Snapshot(destinationId));
@@ -51,19 +55,25 @@ public sealed class Bank
             _balances.Clear();
     }
 
-    private void Credit(string accountId, decimal amount) =>
-        _balances[accountId] = _balances.GetValueOrDefault(accountId) + amount;
-
-    private void Debit(string accountId, decimal amount)
+    private void EnsureCanDebit(string accountId, decimal amount)
     {
         if (!_balances.TryGetValue(accountId, out var balance))
             throw new AccountNotFoundException(accountId);
 
         if (balance < amount)
             throw new InsufficientFundsException(accountId);
-
-        _balances[accountId] = balance - amount;
     }
+
+    private void EnsureCanCredit(string accountId, decimal amount)
+    {
+        if (decimal.MaxValue - _balances.GetValueOrDefault(accountId) < amount)
+            throw new BalanceLimitExceededException(accountId);
+    }
+
+    private void Debit(string accountId, decimal amount) => _balances[accountId] -= amount;
+
+    private void Credit(string accountId, decimal amount) =>
+        _balances[accountId] = _balances.GetValueOrDefault(accountId) + amount;
 
     private Account Snapshot(string accountId) => new(accountId, _balances[accountId]);
 

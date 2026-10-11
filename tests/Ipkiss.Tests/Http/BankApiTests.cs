@@ -95,6 +95,15 @@ public sealed class BankApiTests : IDisposable
         await AssertText(await GetBalance("100"), HttpStatusCode.NotFound, "0");
     }
 
+    [Fact]
+    public async Task Deposit_beyond_the_balance_limit_is_rejected()
+    {
+        await PostEvent($$"""{"type":"deposit", "destination":"100", "amount":{{decimal.MaxValue}}}""");
+
+        await AssertText(await PostEvent("""{"type":"deposit", "destination":"100", "amount":1}"""),
+            HttpStatusCode.BadRequest, "0");
+    }
+
     [Theory]
     [InlineData("{bad")]
     [InlineData("")]

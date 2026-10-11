@@ -46,7 +46,9 @@ public static class BankEndpoints
         {
             return NotFound();
         }
-        catch (Exception e) when (e is InsufficientFundsException or InvalidAmountException)
+        catch (Exception e) when (e is InsufficientFundsException
+                                       or InvalidAmountException
+                                       or BalanceLimitExceededException)
         {
             return BadRequest();
         }

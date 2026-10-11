@@ -130,6 +130,28 @@ public class BankTests
         Assert.Equal(10, _bank.GetBalance("100"));
     }
 
+    [Fact]
+    public void Deposit_beyond_the_balance_limit_fails_and_keeps_balance()
+    {
+        _bank.Deposit("100", decimal.MaxValue);
+
+        Assert.Throws<BalanceLimitExceededException>(() => _bank.Deposit("100", 1));
+
+        Assert.Equal(decimal.MaxValue, _bank.GetBalance("100"));
+    }
+
+    [Fact]
+    public void Transfer_beyond_the_destination_limit_fails_and_keeps_both_balances()
+    {
+        _bank.Deposit("100", 10);
+        _bank.Deposit("300", decimal.MaxValue);
+
+        Assert.Throws<BalanceLimitExceededException>(() => _bank.Transfer("100", "300", 1));
+
+        Assert.Equal(10, _bank.GetBalance("100"));
+        Assert.Equal(decimal.MaxValue, _bank.GetBalance("300"));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
