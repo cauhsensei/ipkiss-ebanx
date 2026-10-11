@@ -1,5 +1,7 @@
 # Ipkiss
 
+[![CI](https://github.com/cauhsensei/ipkiss-ebanx/actions/workflows/ci.yml/badge.svg)](https://github.com/cauhsensei/ipkiss-ebanx/actions/workflows/ci.yml)
+
 API de contas em memória para o desafio da EBANX, em .NET 10.
 
 ## Como rodar
