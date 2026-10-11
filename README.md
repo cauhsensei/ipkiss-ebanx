@@ -10,7 +10,7 @@ Requisito: [.NET SDK 10](https://dotnet.microsoft.com/download).
 dotnet run --project src/Ipkiss.Api
 ```
 
-A API sobe em `http://localhost:5000`.
+A API sobe em `http://localhost:5080`.
 
 Testes:
 
