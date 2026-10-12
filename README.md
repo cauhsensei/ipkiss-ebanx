@@ -4,6 +4,8 @@
 
 API de contas em memória para o desafio da EBANX, em .NET 10.
 
+Publicada em https://ipkiss-ebanx.onrender.com (plano gratuito do Render: a primeira requisição depois de um tempo parada pode levar alguns segundos, e o estado em memória é zerado quando o serviço dorme).
+
 ## Como rodar
 
 Requisito: [.NET SDK 10](https://dotnet.microsoft.com/download).
